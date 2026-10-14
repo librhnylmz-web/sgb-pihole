@@ -1,8 +1,9 @@
+
 name: Update SGB Pi-hole list
 
 on:
   schedule:
-    - cron: '17 2 * * *' # Daily 02:17 UTC
+    - cron: '17 2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -16,26 +17,30 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - name: Fetch and build list
         run: python scripts/update.py
+
       - name: Commit only if changed
         run: |
-          if git diff --quiet -- domains.txt && [ -f domains.txt ]; then
-            echo 'No changes to commit'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add domains.txt
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
             exit 0
           fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add domains.txt
-          git diff --cached --quiet && exit 0
-          git commit -m 'chore: refresh SGB Pi-hole domains'
+
+          git commit -m "chore: refresh SGB Pi-hole domains"
           git push
